@@ -102,8 +102,8 @@ def boss_actions(bossImg, x, y, minX, maxX, minY, maxY, speed, bullets):
     candidates = [direction for direction, danger in dangerMap.items() if danger == min_danger]
     safestMove = random.choice(candidates)
     
-    print(safestMove)
-    print("ping")
+    #print(safestMove)
+    #print("ping")
 
     # dangerMap["rightDanger"] = 0
     # dangerMap["leftDanger"] = 0
@@ -207,6 +207,10 @@ while running:
         if keys[pygame.K_c] and (current_time - last_shot_time > (shoot_cooldown * 2)):
             superBullet = Bullet(player_pos[0] + player_img.get_width() // 2, player_pos[1], "player", 2, "super")
             bullets.append(superBullet)
+            last_shot_time = current_time
+        if keys[pygame.K_c] and (current_time - last_shot_time > (shoot_cooldown * 3)):
+            randomBullet = Bullet(player_pos[0] + player_img.get_width() // 2, player_pos[1], "player", 2, "random")
+            bullets.append(randomBullet)
             last_shot_time = current_time
 
         # Clamp position
