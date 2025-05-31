@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # Load images
     load_player_img = pygame.image.load('assets/plantson.png').convert_alpha()
     load_boss_img = pygame.image.load('assets/Castle_Pibby.png').convert_alpha()
-    load_boss_img2 = pygame.image.load('assets/PIBBY_snail.png').convert_alpha()
+    load_boss_img2 = pygame.image.load('assets/PIBBY_mushy.png').convert_alpha()
     # Scale them to fit
     player_img = pygame.transform.smoothscale(load_player_img, (80, 80))
     boss_img = pygame.transform.smoothscale(load_boss_img, (80, 80))
@@ -54,11 +54,11 @@ def draw_health_bars(surface, x, y, bossHealth, playerHealth):
     pygame.draw.rect(surface, RED, (x, screenHeight - healthBarHeight - y, 200, healthBarHeight))
     pygame.draw.rect(surface, GREEN, (x, screenHeight - healthBarHeight - y, 2 * playerHealth, healthBarHeight))
 
-def boss_actions(x, y, minX, maxX, minY, maxY, speed, bullets):
-    moveRight = x + 2 * speed
-    moveLeft = x - 2 * speed
-    moveUp = y - 2 * speed
-    moveDown = y + 2 * speed
+def boss_actions(bossImg, x, y, minX, maxX, minY, maxY, speed, bullets):
+    moveRight = x + (bossImg.get_width() // 2) + speed
+    moveLeft = x - (bossImg.get_width() // 2) - speed
+    moveUp = y + (bossImg.get_height() // 2) - speed
+    moveDown = y - (bossImg.get_height() // 2) + speed
 
     dangerMap = {}
     dangerMap["rightDanger"] = 0
@@ -66,6 +66,7 @@ def boss_actions(x, y, minX, maxX, minY, maxY, speed, bullets):
     dangerMap["upDanger"] = 0
     dangerMap["downDanger"] = 0
     
+    # make sure it does not go out of bounds
     if moveRight > maxX:
         dangerMap["rightDanger"] = float('inf')
     if moveLeft < minX:
@@ -75,22 +76,40 @@ def boss_actions(x, y, minX, maxX, minY, maxY, speed, bullets):
     if moveDown > maxY:
         dangerMap["downDanger"] = float('inf')
 
+    # make sure it avoids bullets
     for bullet in bullets[:]:
-        if x <= bullet.x <= moveRight:
+        if bullet.origin == "boss":
+            continue
+        if (x <= bullet.x <= moveRight):
             dangerMap["rightDanger"] += 1
-        if moveLeft <= bullet.x <= x:
+        if (moveLeft <= bullet.x <= x):
             dangerMap["leftDanger"] += 1
-        if moveUp <= bullet.y <= y:
+        if (moveUp <= bullet.y <= y):
             dangerMap["upDanger"] += 1
-        if y <= bullet.y <= moveDown:
+        if (y <= bullet.y <= moveDown):
             dangerMap["downDanger"] += 1
 
-    # add clamp conditions to prevent corner hugs
-    # if a move is out of bounds, set the danger level to infinity
+    # if all(c == 0 for c in dangerMap.values()) or all (d == float('inf') for d in dangerMap.values()):
+    #     # dangerMap["rightDanger"] = 0
+    #     # dangerMap["leftDanger"] = 0
+    #     # dangerMap["upDanger"] = 0
+    #     # dangerMap["downDanger"] = 0
+    #     return "stay"
 
-    safestMove = min(dangerMap, key=dangerMap.get)
-    if dangerMap[safestMove] == 0:
-        return str(0)
+    #print(dangerMap)
+
+    min_danger = min(dangerMap.values())
+    candidates = [direction for direction, danger in dangerMap.items() if danger == min_danger]
+    safestMove = random.choice(candidates)
+    
+    print(safestMove)
+    print("ping")
+
+    # dangerMap["rightDanger"] = 0
+    # dangerMap["leftDanger"] = 0
+    # dangerMap["upDanger"] = 0
+    # dangerMap["downDanger"] = 0
+
     return safestMove
     
 
@@ -148,8 +167,8 @@ class Bullet:
 # finite state machine
 running = True
 gameOver = False
-tutorial = False
-levelOne = True
+tutorial = True
+levelOne = False
 levelTwo = False
 
 # attack cool down
@@ -246,21 +265,9 @@ while running:
             bullets.append(superBullet)
             last_shot_time = current_time
         
-
         # Clamp position
         player_pos[0] = max(0, min(player_pos[0], screenWidth - player_img.get_width()))
         player_pos[1] = max(healthBarHeight, min(player_pos[1], screenHeight - player_img.get_height() - healthBarHeight))
-
-        # boss move
-        bossMovement = boss_actions(boss_pos[0], boss_pos[1], 0, min(boss_pos[0], screenWidth - boss_img.get_width()), healthBarHeight, min(boss_pos[1], screenHeight - boss_img.get_height() - healthBarHeight), 2, bullets)
-        if (bossMovement == "leftDanger"):
-            boss_pos[0] -= 2
-        elif (bossMovement == "rightDanger"):
-            boss_pos[0] += 2
-        elif (bossMovement == "upDanger"):
-            boss_pos[1] -= 2
-        elif (bossMovement == "upDanger"):
-            boss_pos[1] += 2
 
         # boss shooting
         if current_time - boss_shot_time >= shoot_cooldown:
@@ -275,6 +282,17 @@ while running:
             randomBossBullet = Bullet(boss_pos[0] + boss_img.get_width() // 2, boss_pos[1] + boss_img.get_height(), "boss", 2, "random")
             bullets.append(randomBossBullet)
             random_boss_shot_time = current_time
+
+        # boss move
+        bossMovement = boss_actions(boss_img2, boss_pos[0], boss_pos[1], 0, screenWidth, healthBarHeight, screenHeight - healthBarHeight, 4, bullets)
+        if (bossMovement == "leftDanger"):
+            boss_pos[0] -= 4
+        elif (bossMovement == "rightDanger"):
+            boss_pos[0] += 4
+        elif (bossMovement == "upDanger"):
+            boss_pos[1] -= 4
+        elif (bossMovement == "downDanger"):
+            boss_pos[1] += 4
 
         # Update bullets
         for bullet in bullets[:]:
@@ -291,7 +309,7 @@ while running:
 
         # Draw
         screen.blit(player_img, player_pos)
-        screen.blit(boss_img, boss_pos)
+        screen.blit(boss_img2, boss_pos)
         draw_health_bars(screen, 10, 10, boss_health, player_health)
 
         if player_health <= 0:
@@ -303,8 +321,8 @@ while running:
             ]
 
             boss_pos = [
-                screenWidth / 2 - boss_img.get_width() / 2,
-                screenHeight * 0.25 - boss_img.get_height() / 2
+                screenWidth / 2 - boss_img2.get_width() / 2,
+                screenHeight * 0.25 - boss_img2.get_height() / 2
             ]
             bullets = []
             player_health = 100
@@ -314,6 +332,9 @@ while running:
 
         pygame.display.flip()
         clock.tick(60)
+
+    elif not gameOver and levelTwo:
+        gameOver = True
 
     elif gameOver:
         gameOverText = font.render('Game Over', True, RED)
