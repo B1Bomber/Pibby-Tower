@@ -146,7 +146,7 @@ class Bullet:
 
     def update(self):
         if (self.state == "random") and (self.origin == "player"):
-            self.y += random.randint(-10, 10)
+            self.y += random.randint(-10, 0)
             self.x += random.randint(-10, 10)
         elif (self.state == "random") and (self.origin == "boss"):
             self.y += random.randint(0, 10)
@@ -208,7 +208,7 @@ while running:
             superBullet = Bullet(player_pos[0] + player_img.get_width() // 2, player_pos[1], "player", 2, "super")
             bullets.append(superBullet)
             last_shot_time = current_time
-        if keys[pygame.K_c] and (current_time - last_shot_time > (shoot_cooldown * 3)):
+        if keys[pygame.K_v] and (current_time - last_shot_time > (shoot_cooldown * 3)):
             randomBullet = Bullet(player_pos[0] + player_img.get_width() // 2, player_pos[1], "player", 2, "random")
             bullets.append(randomBullet)
             last_shot_time = current_time
@@ -267,6 +267,10 @@ while running:
         if keys[pygame.K_c] and (current_time - last_shot_time > (shoot_cooldown * 2)):
             superBullet = Bullet(player_pos[0] + player_img.get_width() // 2, player_pos[1], "player", 2, "super")
             bullets.append(superBullet)
+            last_shot_time = current_time
+        if keys[pygame.K_v] and (current_time - last_shot_time > (shoot_cooldown * 3)):
+            randomBullet = Bullet(player_pos[0] + player_img.get_width() // 2, player_pos[1], "player", 2, "random")
+            bullets.append(randomBullet)
             last_shot_time = current_time
         
         # Clamp position
